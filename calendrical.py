@@ -63,7 +63,7 @@ def biz_day_month(rdate):
     bdm = 0
     index_date = rdate1
     while index_date <= rdate:
-        dw = day_of_week(index)
+        dw = day_of_week(index_date)
         week_day = dw >= 1 and dw <= 5
         if week_day:
             bdm += 1
@@ -1069,6 +1069,7 @@ def set_holidays(gyear, observe):
 # Treatments
 #
 
+
 #
 # Function extract_date
 #
@@ -1100,4 +1101,59 @@ def extract_date(f, c):
         date_features = pd.concat(frames, axis=1)
     except:
         logger.info("Could not extract date information from %s column", c)
+    return date_features
+
+
+#
+# Function get_rdate
+#
+
+def get_rdate(row):
+    r"""Extract RDate from a dataframe.
+
+    Parameters
+    ----------
+    row : pandas.DataFrame
+        Row of a dataframe containing year, month, and day.
+
+    Returns
+    -------
+    rdate : int
+        RDate date format.
+
+    """
+    return gdate_to_rdate(row['year'], row['month'], row['day'])
+
+
+#
+# Function extract_bizday
+#
+
+def extract_bizday(f, c):
+    r"""Extract business day of month and week.
+
+    Parameters
+    ----------
+    f : pandas.DataFrame
+        Dataframe containing the date column ``c``.
+    c : str
+        Name of the date column in the dataframe ``f``.
+
+    Returns
+    -------
+    date_features : pandas.DataFrame
+        The dataframe containing the date features.
+
+    """
+
+    date_features = pd.DataFrame()
+    try:
+        date_features = extract_date(f, c)
+        rdate = date_features.apply(get_rdate, axis=1)
+        bdm = pd.Series(rdate.apply(biz_day_month), name='bizday_month')
+        bdw = pd.Series(rdate.apply(biz_day_week), name='bizday_week')
+        frames = [date_features, bdm, bdw]
+        date_features = pd.concat(frames, axis=1)
+    except:
+        logger.info("Could not extract business date information from %s column", c)
     return date_features
